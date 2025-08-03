@@ -1,62 +1,36 @@
-const query = require('../db/db-connection');
-const { multipleColumnSet } = require('../utils/common.utils');
-const Role = require('../utils/userRoles.utils');
-class UserModel {
-    tableName = 'user';
+const db = require('../db/db-connection');
 
-    find = async (params = {}) => {
-        let sql = `SELECT * FROM ${this.tableName}`;
+// Create a new user
+exports.createUser = async (user) => {
+  const sql = `INSERT INTO user (name, email) VALUES (?, ?)`;
+  const result = await db(sql, [user.name, user.email]);
+  return result;
+};
 
-        if (!Object.keys(params).length) {
-            return await query(sql);
-        }
+// Get all users
+exports.getAllUsers = async () => {
+  const sql = `SELECT * FROM user`;
+  const result = await db(sql);
+  return result;
+};
 
-        const { columnSet, values } = multipleColumnSet(params)
-        sql += ` WHERE ${columnSet}`;
+// Get a user by ID
+exports.getUserById = async (id) => {
+  const sql = `SELECT * FROM user WHERE user_id = ?`;
+  const result = await db(sql, [id]);
+  return result[0]; // return first matching user
+};
 
-        return await query(sql, [...values]);
-    }
+// Update a user
+exports.updateUser = async (id, user) => {
+  const sql = `UPDATE user SET name = ?, email = ? WHERE user_id = ?`;
+  const result = await db(sql, [user.name, user.email, id]);
+  return result;
+};
 
-    findOne = async (params) => {
-        const { columnSet, values } = multipleColumnSet(params)
-
-        const sql = `SELECT * FROM ${this.tableName}
-        WHERE ${columnSet}`;
-
-        const result = await query(sql, [...values]);
-
-        // return back the first row (user)
-        return result[0];
-    }
-
-    create = async ({ username, password, first_name, last_name, email, role = Role.SuperUser, age = 0 }) => {
-        const sql = `INSERT INTO ${this.tableName}
-        (username, password, first_name, last_name, email, role, age) VALUES (?,?,?,?,?,?,?)`;
-
-        const result = await query(sql, [username, password, first_name, last_name, email, role, age]);
-        const affectedRows = result ? result.affectedRows : 0;
-
-        return affectedRows;
-    }
-
-    update = async (params, id) => {
-        const { columnSet, values } = multipleColumnSet(params)
-
-        const sql = `UPDATE user SET ${columnSet} WHERE id = ?`;
-
-        const result = await query(sql, [...values, id]);
-
-        return result;
-    }
-
-    delete = async (id) => {
-        const sql = `DELETE FROM ${this.tableName}
-        WHERE id = ?`;
-        const result = await query(sql, [id]);
-        const affectedRows = result ? result.affectedRows : 0;
-
-        return affectedRows;
-    }
-}
-
-module.exports = new UserModel;
+// Delete a user
+exports.deleteUser = async (id) => {
+  const sql = `DELETE FROM user WHERE user_id = ?`;
+  const result = await db(sql, [id]);
+  return result;
+};
