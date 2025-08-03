@@ -7,8 +7,9 @@ class DBConnection {
         this.db = mysql2.createPool({
             host: process.env.DB_HOST,
             user: process.env.DB_USER,
-            password: process.env.DB_PASS,
-            database: process.env.DB_DATABASE
+            password: process.env.DB_PASSWORD || '',  // empty string fallback
+            database: process.env.DB_NAME,
+            port: process.env.DB_PORT || 3306
         });
 
         this.checkConnection();
@@ -30,7 +31,6 @@ class DBConnection {
             if (connection) {
                 connection.release();
             }
-            return
         });
     }
 
@@ -42,24 +42,19 @@ class DBConnection {
                     return;
                 }
                 resolve(result);
-            }
-            // execute will internally call prepare and query
+            };
             this.db.execute(sql, values, callback);
         }).catch(err => {
             const mysqlErrorList = Object.keys(HttpStatusCodes);
-            // convert mysql errors which in the mysqlErrorList list to http status code
             err.status = mysqlErrorList.includes(err.code) ? HttpStatusCodes[err.code] : err.status;
-
             throw err;
         });
     }
 }
 
-// like ENUM
 const HttpStatusCodes = Object.freeze({
     ER_TRUNCATED_WRONG_VALUE_FOR_FIELD: 422,
     ER_DUP_ENTRY: 409
 });
-
 
 module.exports = new DBConnection().query;
