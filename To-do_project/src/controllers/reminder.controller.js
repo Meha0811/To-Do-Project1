@@ -1,64 +1,54 @@
 const ReminderModel = require('../models/reminder.model');
 
-const ReminderController = {
-  // Create a reminder
-  createReminder: async (req, res) => {
-    try {
-      const reminderData = req.body;
-      const result = await ReminderModel.createReminder(reminderData);
-      res.status(201).json({ message: 'Reminder created successfully', reminder_id: result.insertId });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to create reminder' });
-    }
-  },
+// Create a new reminder
+exports.createReminder = async (req, res, next) => {
+  try {
+    const { task_id, reminder_time } = req.body;
 
-  // Get a reminder by ID
-  getReminderById: async (req, res) => {
-    try {
-      const reminderId = req.params.id;
-      const reminder = await ReminderModel.getReminderById(reminderId);
-      if (!reminder) {
-        return res.status(404).json({ error: 'Reminder not found' });
-      }
-      res.status(200).json(reminder);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to get reminder' });
+    if (!task_id || !reminder_time) {
+      return res.status(400).json({ message: 'task_id and reminder_time are required' });
     }
-  },
 
-  // Get all reminders for a task
-  getRemindersByTaskId: async (req, res) => {
-    try {
-      const taskId = req.params.taskId;
-      const reminders = await ReminderModel.getRemindersByTaskId(taskId);
-      res.status(200).json(reminders);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to get reminders' });
-    }
-  },
+    const result = await ReminderModel.createReminder({ task_id, reminder_time });
 
-  // Update a reminder
-  updateReminder: async (req, res) => {
-    try {
-      const reminderId = req.params.id;
-      const updatedData = req.body;
-      await ReminderModel.updateReminder(reminderId, updatedData);
-      res.status(200).json({ message: 'Reminder updated successfully' });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to update reminder' });
-    }
-  },
-
-  // Delete a reminder
-  deleteReminder: async (req, res) => {
-    try {
-      const reminderId = req.params.id;
-      await ReminderModel.deleteReminder(reminderId);
-      res.status(200).json({ message: 'Reminder deleted successfully' });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to delete reminder' });
-    }
+    res.status(201).json({
+      message: 'Reminder created successfully',
+      reminderId: result.insertId
+    });
+  } catch (error) {
+    console.error('Reminder Error:', error);
+    res.status(500).json({ error: 'Failed to create reminder' });
   }
 };
 
-module.exports = ReminderController;
+// Get all reminders
+exports.getAllReminders = async (req, res, next) => {
+  try {
+    const reminders = await ReminderModel.getAllReminders();
+    res.status(200).json(reminders);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get reminders by task ID
+exports.getRemindersByTaskId = async (req, res, next) => {
+  try {
+    const { taskId } = req.params;
+    const reminders = await ReminderModel.getRemindersByTaskId(taskId);
+    res.status(200).json(reminders);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Delete a reminder
+exports.deleteReminder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await ReminderModel.deleteReminder(id);
+    res.status(200).json({ message: 'Reminder deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
