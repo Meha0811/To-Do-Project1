@@ -6,6 +6,7 @@ const errorMiddleware = require('./middleware/error.middleware');
 const userRouter = require('./routes/user.route');
 const taskRouter = require('./routes/task.route');
 const categoryRouter = require('./routes/category.route');
+const reminderRouter = require('./routes/reminder.route');
 
 // Init express
 const app = express();
@@ -24,6 +25,7 @@ const port = Number(process.env.PORT || 3331);
 app.use(`/api/v1/users`, userRouter);
 app.use('/api/v1/tasks', taskRouter);
 app.use('/api/v1/tasks', categoryRouter);
+app.use('/api/v1/tasks', reminderRouter);
 
 // 404 error 
 app.all('*', (req, res, next) => {
