@@ -6,7 +6,7 @@ const validate = require('../middleware/validators/validate');
 const {
   createTaskValidator,
   updateTaskValidator,
-} = require('../middleware/validators/task.validator');
+} = require('../middleware/validators/taskValidator.middleware');
 
 // Routes
 router.post('/', createTaskValidator, validate, awaitHandler(taskController.createTask));

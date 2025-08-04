@@ -6,7 +6,7 @@ const validate = require('../middleware/validators/validate');
 const {
   createCategoryValidator,
   updateCategoryValidator,
-} = require('../middleware/validators/category.validator');
+} = require('../middleware/validators/categoryValidator.middleware');
 
 router.post('/', createCategoryValidator, validate, awaitHandler(categoryController.createCategory));
 router.get('/', awaitHandler(categoryController.getAllCategories));

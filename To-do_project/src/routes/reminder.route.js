@@ -6,7 +6,7 @@ const validate = require('../middleware/validators/validate');
 const {
   createReminderValidator,
   updateReminderValidator,
-} = require('../middleware/validators/reminder.validator');
+} = require('../middleware/validators/reminderValidator.middleware');
 
 router.post('/', createReminderValidator, validate, awaitHandler(reminderController.createReminder));
 router.get('/', awaitHandler(reminderController.getAllReminders));
