@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
-const { createUserValidator, updateUserValidator } = require('../middleware/validators/user.validator');
+const { createUserValidator, updateUserValidator } = require('../middleware/validators/userValidator.middleware');
+
 const { validationResult } = require('express-validator');
 const awaitHandler = require('../middleware/awaitHandlerFactory.middleware');
 
