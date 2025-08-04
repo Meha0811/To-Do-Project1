@@ -5,6 +5,7 @@ const HttpException = require('./utils/HttpException.utils');
 const errorMiddleware = require('./middleware/error.middleware');
 const userRouter = require('./routes/user.route');
 const taskRouter = require('./routes/task.route');
+const taskRouter = require('./routes/category.route');
 
 // Init express
 const app = express();
@@ -22,6 +23,7 @@ const port = Number(process.env.PORT || 3331);
 
 app.use(`/api/v1/users`, userRouter);
 app.use('/api/v1/tasks', taskRouter);
+app.use('/api/v1/tasks', categoryRouter);
 
 // 404 error
 app.all('*', (req, res, next) => {
