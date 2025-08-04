@@ -24,8 +24,8 @@ const port = Number(process.env.PORT || 3331);
 
 app.use(`/api/v1/users`, userRouter);
 app.use('/api/v1/tasks', taskRouter);
-app.use('/api/v1/tasks', categoryRouter);
-app.use('/api/v1/tasks', reminderRouter);
+app.use('/api/v1/category', categoryRouter);
+app.use('/api/v1/reminder', reminderRouter);
 
 // 404 error 
 app.all('*', (req, res, next) => {
