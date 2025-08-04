@@ -1,108 +1,78 @@
 const db = require('../db/db-connection');
 
-class TaskModel {
-  async createTask(task) {
+const TaskModel = {
+  // Create task
+  createTask: async (task) => {
     const sql = `
-      INSERT INTO task (user_id, title, description, category_id, priority, due_date, is_starred, color_tag, repeat_pattern)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO task 
+      (user_id, title, description, category_id, priority, due_date, is_starred, color_tag, repeat_pattern, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
-    const result = await db(sql, [
+    const values = [
       task.user_id,
       task.title,
       task.description || '',
-      task.category_id,
-      task.priority,
+      task.category_id || null,
+      task.priority || 'Low',
       task.due_date,
       task.is_starred || false,
       task.color_tag || null,
       task.repeat_pattern || 'none'
-    ]);
-    return result;
-  }
+    ];
+    return await db(sql, values);
+  },
 
-  async getTasksByUser(user_id, filters = {}) {
-    let sql = `SELECT * FROM task WHERE user_id = ?`;
-    let params = [user_id];
+  // Get task by ID
+  getTaskById: async (id) => {
+    const sql = 'SELECT * FROM task WHERE task_id = ?';
+    const result = await db(sql, [id]);
+    return result[0]; // return first matching row
+  },
 
-    if (filters.completed !== undefined) {
-      sql += ` AND is_completed = ?`;
-      params.push(filters.completed);
+  // Get all tasks for a user (with optional filters)
+  getTasksForUser: async (userId, filters) => {
+    let sql = 'SELECT * FROM task WHERE user_id = ?';
+    const values = [userId];
+
+    if (filters.priority) {
+      sql += ' AND priority = ?';
+      values.push(filters.priority);
     }
 
-    if (filters.category_id) {
-      sql += ` AND category_id = ?`;
-      params.push(filters.category_id);
+    if (filters.starred) {
+      sql += ' AND is_starred = ?';
+      values.push(filters.starred === 'true' ? 1 : 0);
     }
 
     if (filters.due_date) {
-      sql += ` AND due_date = ?`;
-      params.push(filters.due_date);
+      sql += ' AND due_date = ?';
+      values.push(filters.due_date);
     }
 
-    if (filters.priority) {
-      sql += ` AND priority = ?`;
-      params.push(filters.priority);
-    }
+    return await db(sql, values);
+  },
 
-    if (filters.starred === 'true') {
-      sql += ` AND is_starred = true`;
-    }
+  // Update task
+  updateTask: async (id, data) => {
+    let fields = [];
+    let values = [];
 
-    if (filters.color_tag) {
-      sql += ` AND color_tag = ?`;
-      params.push(filters.color_tag);
-    }
+    Object.entries(data).forEach(([key, value]) => {
+      fields.push(`${key} = ?`);
+      values.push(value);
+    });
 
-    if (filters.exclude_archived !== false) {
-      sql += ` AND is_archived = false`;
-    }
+    const sql = `UPDATE task SET ${fields.join(', ')}, updated_at = NOW() WHERE task_id = ?`;
+    values.push(id);
 
-    sql += ` ORDER BY 
-      CASE priority
-        WHEN 'High' THEN 1
-        WHEN 'Medium' THEN 2
-        WHEN 'Low' THEN 3
-        ELSE 4
-      END,
-      due_date ASC
-    `;
+    return await db(sql, values);
+  },
 
-    return await db(sql, params);
+  // Delete task
+  deleteTask: async (id) => {
+    const sql = 'DELETE FROM task WHERE task_id = ?';
+    return await db(sql, [id]);
   }
+};
 
-  async updateTask(task_id, data) {
-    const sql = `
-      UPDATE task SET title = ?, description = ?, category_id = ?, priority = ?, due_date = ?, is_starred = ?, color_tag = ?, repeat_pattern = ?
-      WHERE task_id = ?
-    `;
-    return await db(sql, [
-      data.title,
-      data.description,
-      data.category_id,
-      data.priority,
-      data.due_date,
-      data.is_starred,
-      data.color_tag,
-      data.repeat_pattern,
-      task_id
-    ]);
-  }
-
-  async deleteTask(task_id) {
-    return await db(`DELETE FROM task WHERE task_id = ?`, [task_id]);
-  }
-
-  async markAsCompleted(task_id) {
-    return await db(`UPDATE task SET is_completed = true WHERE task_id = ?`, [task_id]);
-  }
-
-  async archiveTask(task_id) {
-    return await db(`UPDATE task SET is_archived = true WHERE task_id = ?`, [task_id]);
-  }
-
-  async unarchiveTask(task_id) {
-    return await db(`UPDATE task SET is_archived = false WHERE task_id = ?`, [task_id]);
-  }
-}
-
-module.exports = new TaskModel();
+module.exports = TaskModel;
