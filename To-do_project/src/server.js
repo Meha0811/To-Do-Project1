@@ -5,7 +5,7 @@ const HttpException = require('./utils/HttpException.utils');
 const errorMiddleware = require('./middleware/error.middleware');
 const userRouter = require('./routes/user.route');
 const taskRouter = require('./routes/task.route');
-const taskRouter = require('./routes/category.route');
+const categoryRouter = require('./routes/category.route');
 
 // Init express
 const app = express();
