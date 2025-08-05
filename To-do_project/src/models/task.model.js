@@ -29,32 +29,42 @@ const TaskModel = {
     return result[0];
   },
 
-  // Get all tasks for a user (with optional filters)
   getTasksForUser: async (userId, filters) => {
-    let sql = 'SELECT * FROM task WHERE user_id = ?';
-    const values = [userId];
+  let sql = 'SELECT * FROM task WHERE user_id = ?';
+  const values = [userId];
 
-    if (filters.priority) {
-      sql += ' AND priority = ?';
-      values.push(filters.priority);
-    }
+  if (filters.priority) {
+    sql += ' AND priority = ?';
+    values.push(filters.priority);
+  }
 
-    if (filters.starred) {
-      sql += ' AND is_starred = ?';
-      values.push(filters.starred === 'true' ? 1 : 0);
-    }
+  if (filters.starred) {
+    sql += ' AND is_starred = ?';
+    values.push(filters.starred === 'true' ? 1 : 0);
+  }
 
-    if (filters.due_date) {
-      sql += ' AND due_date = ?';
-      values.push(filters.due_date);
-    }
+  if (filters.due_date) {
+    sql += ' AND due_date = ?';
+    values.push(filters.due_date);
+  }
 
-    if (!filters.include_archived || filters.include_archived !== 'true') {
-      sql += ' AND is_archived = 0';
-    }
+  if (filters.is_completed !== undefined) {
+    sql += ' AND is_completed = ?';
+    values.push(filters.is_completed === 'true' ? 1 : 0);
+  }
 
-    return await db(sql, values);
-  },
+  if (filters.category_id) {
+    sql += ' AND category_id = ?';
+    values.push(filters.category_id);
+  }
+
+  if (!filters.include_archived || filters.include_archived !== 'true') {
+    sql += ' AND is_archived = 0';
+  }
+
+  return await db(sql, values);
+},
+
 
   // Update task
   updateTask: async (id, data) => {

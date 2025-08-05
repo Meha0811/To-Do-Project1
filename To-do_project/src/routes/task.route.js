@@ -19,5 +19,8 @@ router.delete('/:id', awaitHandler(taskController.deleteTask));
 router.put('/:id/archive', awaitHandler(taskController.archiveTask));
 router.put('/:id/restore', awaitHandler(taskController.restoreTask));
 router.get('/user/:userId/archived', awaitHandler(taskController.getArchivedTasks));
+router.get('/', awaitHandler(taskController.getAllTasks));
+
+
 
 module.exports = router;

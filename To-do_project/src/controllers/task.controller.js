@@ -104,3 +104,27 @@ exports.getArchivedTasks = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getAllTasks = async (req, res, next) => {
+  try {
+    const userId = req.query.userId;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'userId is required' });
+    }
+
+    const filters = {
+      priority: req.query.priority,
+      category_id: req.query.category_id,
+      is_completed: req.query.completed,
+      starred: req.query.starred,
+      due_date: req.query.due_date,
+      include_archived: req.query.include_archived
+    };
+
+    const tasks = await TaskModel.getTasksForUser(userId, filters);
+    res.status(200).json(tasks);
+  } catch (error) {
+    next(error);
+  }
+};
