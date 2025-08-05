@@ -2,12 +2,13 @@ const TaskModel = require('../models/task.model');
 const ReminderModel = require('../models/reminder.model');
 const UserModel = require('../models/user.model');
 const sendReminderEmail = require('../services/emailReminder.service');
+const { decrypt } = require('../utils/encryption.utils');
 
 function subtractTime(date, minutes) {
   return new Date(date.getTime() - minutes * 60000);
 }
 
-// Create a new task and set reminder
+// ✅ Create a new task and set reminder
 exports.createTask = async (req, res, next) => {
   try {
     const task = req.body;
@@ -19,13 +20,14 @@ exports.createTask = async (req, res, next) => {
     const result = await TaskModel.createTask(task);
     const taskId = result.insertId;
 
-    // Get user email
+    // ✅ Get user email & decrypt it
     const user = await UserModel.getUserById(task.user_id);
     if (!user || !user.email) {
       return res.status(404).json({ message: 'User email not found' });
     }
+    const email = decrypt(user.email);
 
-    // Create reminder (custom or default 60 minutes before)
+    // ✅ Create reminder (custom or default 60 minutes before)
     const dueDate = new Date(task.due_date);
     const reminderTime = task.reminder_time
       ? new Date(task.reminder_time)
@@ -36,14 +38,14 @@ exports.createTask = async (req, res, next) => {
       reminder_time: reminderTime
     });
 
-    // Schedule email (basic immediate logic for demo)
+    // ✅ Schedule email (basic logic for demo)
     const now = new Date();
     const timeDiff = reminderTime - now;
 
     if (timeDiff > 0) {
       setTimeout(() => {
         sendReminderEmail(
-          user.email,
+          email,
           `Reminder: ${task.title}`,
           `Hey ${user.name}, don't forget to complete your task: "${task.title}" by ${dueDate}`
         );
@@ -59,7 +61,7 @@ exports.createTask = async (req, res, next) => {
   }
 };
 
-// Archive a task
+// ✅ Archive a task
 exports.archiveTask = async (req, res, next) => {
   try {
     const taskId = req.params.id;
@@ -76,7 +78,7 @@ exports.archiveTask = async (req, res, next) => {
   }
 };
 
-// Restore a task
+// ✅ Restore a task
 exports.restoreTask = async (req, res, next) => {
   try {
     const taskId = req.params.id;
@@ -93,7 +95,7 @@ exports.restoreTask = async (req, res, next) => {
   }
 };
 
-// Get archived tasks
+// ✅ Get archived tasks
 exports.getArchivedTasks = async (req, res, next) => {
   try {
     const userId = req.params.userId;
@@ -105,6 +107,7 @@ exports.getArchivedTasks = async (req, res, next) => {
   }
 };
 
+// ✅ Get all tasks with filters
 exports.getAllTasks = async (req, res, next) => {
   try {
     const userId = req.query.userId;

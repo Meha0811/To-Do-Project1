@@ -1,4 +1,6 @@
 const UserModel = require('../models/user.model');
+const UserModel = require('../models/user.model');
+const { encrypt, decrypt } = require('../utils/encryption.utils');
 
 // Create a new user
 exports.createUser = async (req, res, next) => {
@@ -67,5 +69,17 @@ exports.deleteUser = async (req, res, next) => {
     res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
     next(error);
+  }
+};
+
+exports.createUser = async (req, res, next) => {
+  try {
+    const { name, email } = req.body;
+    const encryptedEmail = encrypt(email);
+    const result = await UserModel.createUser({ name, email: encryptedEmail });
+
+    res.status(201).json({ message: 'User created', userId: result.insertId });
+  } catch (err) {
+    next(err);
   }
 };
