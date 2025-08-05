@@ -1,40 +1,47 @@
 const express = require("express");
-const dotenv = require('dotenv');
+const dotenv = require("dotenv");
 const cors = require("cors");
-const HttpException = require('./utils/HttpException.utils');
-const errorMiddleware = require('./middleware/error.middleware');
-const userRouter = require('./routes/user.route');
-const taskRouter = require('./routes/task.route');
+const HttpException = require("./utils/HttpException.utils");
+const errorMiddleware = require("./middleware/error.middleware");
+
+const userRouter = require("./routes/user.route");
+const taskRouter = require("./routes/task.route");
+const progressRouter = require("./routes/progress.route");
+const recurringTaskRouter = require("./routes/recurringtask.route");
 
 // Init express
 const app = express();
+
 // Init environment
 dotenv.config();
-// parse requests of content-type: application/json
-// parses incoming requests with JSON payloads
+
+// Parse JSON
 app.use(express.json());
-// enabling cors for all requests by using cors middleware
+
+// Enable CORS
 app.use(cors());
-// Enable pre-flight
 app.options("*", cors());
 
 const port = Number(process.env.PORT || 3331);
 
-app.use(`/api/v1/users`, userRouter);
-app.use('/api/v1/tasks', taskRouter);
+// Routes
+app.use("/api/v1/users", userRouter);
+app.use("/api/v1/tasks", taskRouter);
+app.use("/api/v1/progress", progressRouter);
+app.use("/api/v1/recurring", recurringTaskRouter);
 
-// 404 error
-app.all('*', (req, res, next) => {
-    const err = new HttpException(404, 'Endpoint Not Found');
-    next(err);
+// 404 handler
+app.all("*", (req, res, next) => {
+  const err = new HttpException(404, "Endpoint Not Found");
+  next(err);
 });
 
-// Error middleware
+// Global error middleware
 app.use(errorMiddleware);
 
-// starting the server
-app.listen(port, () =>
-    console.log(`🚀 Server running on port ${port}!`));
-
+// Start server
+app.listen(port, () => {
+  console.log(🚀 Server running on port ${port});
+});
 
 module.exports = app;
