@@ -27,6 +27,7 @@ app.use('/api/v1/tasks', taskRouter);
 app.use('/api/v1/category', categoryRouter);
 app.use('/api/v1/reminder', reminderRouter);
 require('./cron/reminder.cron');
+require('./services/emailReminder.service'); 
 
 // 404 error 
 app.all('*', (req, res, next) => {
