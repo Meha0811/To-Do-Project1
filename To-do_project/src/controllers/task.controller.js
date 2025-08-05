@@ -58,3 +58,49 @@ exports.createTask = async (req, res, next) => {
     next(error);
   }
 };
+
+// Archive a task
+exports.archiveTask = async (req, res, next) => {
+  try {
+    const taskId = req.params.id;
+    const task = await TaskModel.getTaskById(taskId);
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    await TaskModel.archiveTask(taskId);
+    res.status(200).json({ message: 'Task archived successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Restore a task
+exports.restoreTask = async (req, res, next) => {
+  try {
+    const taskId = req.params.id;
+    const task = await TaskModel.getTaskById(taskId);
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    await TaskModel.restoreTask(taskId);
+    res.status(200).json({ message: 'Task restored successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get archived tasks
+exports.getArchivedTasks = async (req, res, next) => {
+  try {
+    const userId = req.params.userId;
+    const tasks = await TaskModel.getArchivedTasks(userId);
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    next(error);
+  }
+};

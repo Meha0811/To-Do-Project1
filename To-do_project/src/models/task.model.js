@@ -26,7 +26,7 @@ const TaskModel = {
   getTaskById: async (id) => {
     const sql = 'SELECT * FROM task WHERE task_id = ?';
     const result = await db(sql, [id]);
-    return result[0]; // return first matching row
+    return result[0];
   },
 
   // Get all tasks for a user (with optional filters)
@@ -47,6 +47,10 @@ const TaskModel = {
     if (filters.due_date) {
       sql += ' AND due_date = ?';
       values.push(filters.due_date);
+    }
+
+    if (!filters.include_archived || filters.include_archived !== 'true') {
+      sql += ' AND is_archived = 0';
     }
 
     return await db(sql, values);
@@ -72,6 +76,24 @@ const TaskModel = {
   deleteTask: async (id) => {
     const sql = 'DELETE FROM task WHERE task_id = ?';
     return await db(sql, [id]);
+  },
+
+  // Archive task
+  archiveTask: async (id) => {
+    const sql = 'UPDATE task SET is_archived = 1, updated_at = NOW() WHERE task_id = ?';
+    return await db(sql, [id]);
+  },
+
+  // Restore task
+  restoreTask: async (id) => {
+    const sql = 'UPDATE task SET is_archived = 0, updated_at = NOW() WHERE task_id = ?';
+    return await db(sql, [id]);
+  },
+
+  // Get archived tasks
+  getArchivedTasks: async (userId) => {
+    const sql = 'SELECT * FROM task WHERE user_id = ? AND is_archived = 1';
+    return await db(sql, [userId]);
   }
 };
 
