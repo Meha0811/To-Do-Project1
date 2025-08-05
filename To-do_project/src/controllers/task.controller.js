@@ -1,6 +1,14 @@
 const TaskModel = require('../models/task.model');
+const ReminderModel = require('../models/reminder.model');
+const UserModel = require('../models/user.model');
+const sendReminderEmail = require('../services/emailReminder.service');
+const { decrypt } = require('../utils/encryption.utils');
 
-// Create a new task
+function subtractTime(date, minutes) {
+  return new Date(date.getTime() - minutes * 60000);
+}
+
+// ✅ Create a new task and set reminder
 exports.createTask = async (req, res, next) => {
   try {
     const task = req.body;
@@ -10,87 +18,115 @@ exports.createTask = async (req, res, next) => {
     }
 
     const result = await TaskModel.createTask(task);
+    const taskId = result.insertId;
+
+    // ✅ Get user email & decrypt it
+    const user = await UserModel.getUserById(task.user_id);
+    if (!user || !user.email) {
+      return res.status(404).json({ message: 'User email not found' });
+    }
+    const email = decrypt(user.email);
+
+    // ✅ Create reminder (custom or default 60 minutes before)
+    const dueDate = new Date(task.due_date);
+    const reminderTime = task.reminder_time
+      ? new Date(task.reminder_time)
+      : subtractTime(dueDate, 60);
+
+    await ReminderModel.createReminder({
+      task_id: taskId,
+      reminder_time: reminderTime
+    });
+
+    // ✅ Schedule email (basic logic for demo)
+    const now = new Date();
+    const timeDiff = reminderTime - now;
+
+    if (timeDiff > 0) {
+      setTimeout(() => {
+        sendReminderEmail(
+          email,
+          `Reminder: ${task.title}`,
+          `Hey ${user.name}, don't forget to complete your task: "${task.title}" by ${dueDate}`
+        );
+      }, timeDiff);
+    }
+
     res.status(201).json({
-      message: 'Task created successfully',
-      taskId: result.insertId
+      message: 'Task created and reminder scheduled',
+      taskId
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Get task by ID
-exports.getTaskById = async (req, res, next) => {
+// ✅ Archive a task
+exports.archiveTask = async (req, res, next) => {
   try {
-    const task = await TaskModel.getTaskById(req.params.id);
+    const taskId = req.params.id;
+    const task = await TaskModel.getTaskById(taskId);
 
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    res.status(200).json(task);
+    await TaskModel.archiveTask(taskId);
+    res.status(200).json({ message: 'Task archived successfully' });
   } catch (error) {
     next(error);
   }
 };
 
-// Get all tasks for a user (with optional filters)
-exports.getTasksForUser = async (req, res, next) => {
+// ✅ Restore a task
+exports.restoreTask = async (req, res, next) => {
+  try {
+    const taskId = req.params.id;
+    const task = await TaskModel.getTaskById(taskId);
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    await TaskModel.restoreTask(taskId);
+    res.status(200).json({ message: 'Task restored successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ✅ Get archived tasks
+exports.getArchivedTasks = async (req, res, next) => {
   try {
     const userId = req.params.userId;
-    const filters = req.query;
-    const tasks = await TaskModel.getTasksForUser(userId, filters);
+    const tasks = await TaskModel.getArchivedTasks(userId);
+
     res.status(200).json(tasks);
   } catch (error) {
     next(error);
   }
 };
 
-// Update a task
-exports.updateTask = async (req, res, next) => {
+// ✅ Get all tasks with filters
+exports.getAllTasks = async (req, res, next) => {
   try {
-    const result = await TaskModel.updateTask(req.params.id, req.body);
-    res.status(200).json({ message: 'Task updated successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
+    const userId = req.query.userId;
 
-// Delete a task
-exports.deleteTask = async (req, res, next) => {
-  try {
-    await TaskModel.deleteTask(req.params.id);
-    res.status(200).json({ message: 'Task deleted successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
+    if (!userId) {
+      return res.status(400).json({ message: 'userId is required' });
+    }
 
-// Mark task as completed
-exports.markAsCompleted = async (req, res, next) => {
-  try {
-    await TaskModel.updateTask(req.params.id, { is_completed: true });
-    res.status(200).json({ message: 'Task marked as completed' });
-  } catch (error) {
-    next(error);
-  }
-};
+    const filters = {
+      priority: req.query.priority,
+      category_id: req.query.category_id,
+      is_completed: req.query.completed,
+      starred: req.query.starred,
+      due_date: req.query.due_date,
+      include_archived: req.query.include_archived
+    };
 
-// Archive a task
-exports.archiveTask = async (req, res, next) => {
-  try {
-    await TaskModel.updateTask(req.params.id, { is_archived: true });
-    res.status(200).json({ message: 'Task archived' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Unarchive a task
-exports.unarchiveTask = async (req, res, next) => {
-  try {
-    await TaskModel.updateTask(req.params.id, { is_archived: false });
-    res.status(200).json({ message: 'Task unarchived' });
+    const tasks = await TaskModel.getTasksForUser(userId, filters);
+    res.status(200).json(tasks);
   } catch (error) {
     next(error);
   }
