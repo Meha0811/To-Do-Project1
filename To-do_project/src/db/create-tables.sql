@@ -40,7 +40,7 @@ CREATE TABLE reminder (
   task_id INT,
   reminder_time DATETIME,
   is_sent BOOLEAN DEFAULT FALSE,
-  FOREIGN KEY (task_id) REFERENCES task(task_id)
+  FOREIGN KEY (task_id) REFERENCES task(task_id) ON DELETE CASCADE
 );
 
 -- PROGRESS TABLE
@@ -49,7 +49,7 @@ CREATE TABLE progress (
   task_id INT,
   progress_percentage INT CHECK (progress_percentage >= 0 AND progress_percentage <= 100),
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (task_id) REFERENCES task(task_id)
+  FOREIGN KEY (task_id) REFERENCES task(task_id) ON DELETE CASCADE
 );
 
 -- RECURRING TASK TABLE
@@ -58,5 +58,5 @@ CREATE TABLE recurring_task (
   task_id INT,
   pattern ENUM('Daily', 'Weekly', 'Monthly'),
   next_occurence DATETIME,
-  FOREIGN KEY (task_id) REFERENCES task(task_id)
+  FOREIGN KEY (task_id) REFERENCES task(task_id) ON DELETE CASCADE
 );
