@@ -42,7 +42,7 @@ exports.getRemindersByTaskId = async (req, res, next) => {
   }
 };
 
-// Delete a reminder
+// Delete a reminder 
 exports.deleteReminder = async (req, res, next) => {
   try {
     const { id } = req.params;
