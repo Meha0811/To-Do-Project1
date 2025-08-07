@@ -16,12 +16,15 @@ exports.createUserValidator = [
 
 exports.updateUserValidator = [
   body('name')
-    .optional()
+    .exists()
+    .withMessage('Name is required')
     .isLength({ min: 3 })
     .withMessage('Name must be at least 3 characters long'),
 
   body('email')
-    .optional()
+    .exists()
+    .withMessage('Email is required')
     .isEmail()
     .withMessage('Invalid email format'),
 ];
+
