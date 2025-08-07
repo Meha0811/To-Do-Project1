@@ -78,22 +78,6 @@ exports.archiveTask = async (req, res, next) => {
   }
 };
 
-// ✅ Restore a task
-exports.restoreTask = async (req, res, next) => {
-  try {
-    const taskId = req.params.id;
-    const task = await TaskModel.getTaskById(taskId);
-
-    if (!task) {
-      return res.status(404).json({ message: 'Task not found' });
-    }
-
-    await TaskModel.restoreTask(taskId);
-    res.status(200).json({ message: 'Task restored successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
 
 // ✅ Get archived tasks
 exports.getArchivedTasks = async (req, res, next) => {

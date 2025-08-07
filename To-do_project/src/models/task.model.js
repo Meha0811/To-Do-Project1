@@ -94,12 +94,6 @@ const TaskModel = {
     return await db(sql, [id]);
   },
 
-  // Restore task
-  restoreTask: async (id) => {
-    const sql = 'UPDATE task SET is_archived = 0, updated_at = NOW() WHERE task_id = ?';
-    return await db(sql, [id]);
-  },
-
   // Get archived tasks
   getArchivedTasks: async (userId) => {
     const sql = 'SELECT * FROM task WHERE user_id = ? AND is_archived = 1';
