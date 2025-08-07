@@ -1,5 +1,5 @@
 const UserModel = require('../models/user.model');
-const UserModel = require('../models/user.model');
+
 const { encrypt, decrypt } = require('../utils/encryption.utils');
 
 // Create a new user
