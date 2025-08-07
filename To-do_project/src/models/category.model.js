@@ -19,7 +19,7 @@ const CategoryModel = {
   },
 
   // Get all categories for a user
-  getCategoriesByUserId: async (userId) => {
+  getAllCategories: async (userId) => {
     const sql = `SELECT * FROM category WHERE user_id = ?`;
     return await db(sql, [userId]);
   },
