@@ -1,17 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const reminderController = require('../controllers/reminder.controller');
+const reminderValidator = require('../middleware/reminderValidator.middleware');
 
 // Create reminder
-router.post('/', reminderController.createReminder);
+router.post('/', reminderValidator, reminderController.createReminder);
 
 // Get all reminders
 router.get('/', reminderController.getAllReminders);
 
-// Get reminders by task_id
+// Get reminder by task ID
 router.get('/task/:taskId', reminderController.getRemindersByTaskId);
 
-// Delete a reminder
-router.delete('/:id', reminderController.deleteReminder);
+// Update reminder by task ID
+router.put('/task', reminderValidator, reminderController.updateReminder);
+
+// Delete reminder by task ID
+router.delete('/task/:taskId', reminderController.deleteReminder);
 
 module.exports = router;
