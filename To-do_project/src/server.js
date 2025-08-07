@@ -3,9 +3,10 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const HttpException = require("./utils/HttpException.utils");
 const errorMiddleware = require("./middleware/error.middleware");
-
 const userRouter = require("./routes/user.route");
 const taskRouter = require("./routes/task.route");
+const reminderRouter = require("./routes/reminder.route");
+const categoryRouter = require("./routes/category.route");
 const progressRouter = require("./routes/progress.route");
 const recurringTaskRouter = require("./routes/recurringtask.route");
 
@@ -27,6 +28,8 @@ const port = Number(process.env.PORT || 3331);
 // Routes
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/tasks", taskRouter);
+app.use("/api/v1/reminders", reminderRouter);
+app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/progress", progressRouter);
 app.use("/api/v1/recurring", recurringTaskRouter);
 
