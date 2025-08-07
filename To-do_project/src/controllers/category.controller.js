@@ -24,7 +24,12 @@ exports.getCategoryById = async (req, res) => {
 // Get all categories for a user
 exports.getAllCategories = async (req, res) => {
   try {
-    const categories = await CategoryModel.getAllCategories(req.params.userId);
+    const userId = req.query.userId;
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    const categories = await CategoryModel.getAllCategories(userId);
     res.json(categories);
   } catch (err) {
     res.status(500).json({ error: 'Error retrieving categories', details: err.message });

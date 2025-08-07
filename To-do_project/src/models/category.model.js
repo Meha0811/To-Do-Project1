@@ -26,13 +26,17 @@ const CategoryModel = {
 
   // Update category
   updateCategory: async (id, data) => {
-    let fields = [];
-    let values = [];
+    const fields = [];
+    const values = [];
 
-    Object.entries(data).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(data)) {
       fields.push(`${key} = ?`);
       values.push(value);
-    });
+    }
+
+    if (fields.length === 0) {
+      throw new Error("No fields provided for update.");
+    }
 
     const sql = `UPDATE category SET ${fields.join(', ')} WHERE category_id = ?`;
     values.push(id);
