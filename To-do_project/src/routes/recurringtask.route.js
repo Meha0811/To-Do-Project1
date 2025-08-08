@@ -1,19 +1,14 @@
-// routes/recurringTask.routes.js
-
 const express = require('express');
 const router = express.Router();
-const recurringController = require('../controllers/recurringTask.route');
+const exceptionController = require('../controllers/recurring_task_exceptions.controller');
 
-// Create recurring task
-router.post('/', recurringController.createRecurringTask);
+// Add an exception date to skip
+router.post('/', exceptionController.addException);
 
-// Get recurring task by task ID
-router.get('/:taskId', recurringController.getRecurringByTask);
+// Get all exceptions for a recurring task
+router.get('/:taskId', exceptionController.getExceptionsByTask);
 
-// Update recurring task
-router.put('/:taskId', recurringController.updateRecurringTask);
-
-// Delete recurring task
-router.delete('/:taskId', recurringController.deleteRecurringTask);
+// Remove an exception date (pass ?date=YYYY-MM-DD)
+router.delete('/:taskId', exceptionController.removeException);
 
 module.exports = router;

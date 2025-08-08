@@ -1,63 +1,39 @@
-// controllers/recurringTask.controller.js
+const Exceptions = require('../models/recurring_task_exceptions.model');
 
-const RecurringTask = require('../models/recurringTask.model');
-
-// Create recurring task entry
-exports.createRecurringTask = async (req, res) => {
-  try {
-    const { task_id, pattern, next_occurence } = req.body;
-    const newRecurring = await RecurringTask.create({ task_id, pattern, next_occurence });
-    res.status(201).json(newRecurring);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to create recurring task' });
-  }
-};
-
-// Get recurring task by task ID
-exports.getRecurringByTask = async (req, res) => {
-  try {
-    const { taskId } = req.params;
-    const recurring = await RecurringTask.findOne({ where: { task_id: taskId } });
-    if (!recurring) return res.status(404).json({ error: 'Recurring task not found' });
-    res.status(200).json(recurring);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to retrieve recurring task' });
-  }
-};
-
-// Update recurring task pattern or next occurrence
-exports.updateRecurringTask = async (req, res) => {
-  try {
-    const { taskId } = req.params;
-    const { pattern, next_occurence } = req.body;
-
-    const updated = await RecurringTask.update(
-      { pattern, next_occurence },
-      { where: { task_id: taskId } }
-    );
-
-    if (updated[0] === 0) {
-      return res.status(404).json({ error: 'Recurring task not found' });
+// Add exception
+exports.addException = (req, res) => {
+  Exceptions.addException(req.body, (err, result) => {
+    if (err) {
+      console.error('Add exception error:', err);
+      return res.status(500).json({ message: 'Server error', error: err });
     }
-
-    res.status(200).json({ message: 'Recurring task updated successfully' });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to update recurring task' });
-  }
+    res.status(201).json(result);
+  });
 };
 
-// Delete recurring task (optional)
-exports.deleteRecurringTask = async (req, res) => {
-  try {
-    const { taskId } = req.params;
-    const deleted = await RecurringTask.destroy({ where: { task_id: taskId } });
+// Get all exceptions for a recurring task
+exports.getExceptionsByTask = (req, res) => {
+  const recurring_task_id = req.params.taskId;
 
-    if (!deleted) {
-      return res.status(404).json({ error: 'Recurring task not found' });
+  Exceptions.getExceptionsByTask(recurring_task_id, (err, rows) => {
+    if (err) {
+      console.error('Fetch exceptions error:', err);
+      return res.status(500).json({ message: 'Server error' });
     }
+    res.status(200).json(rows);
+  });
+};
 
-    res.status(200).json({ message: 'Recurring task deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to delete recurring task' });
-  }
+// Remove exception
+exports.removeException = (req, res) => {
+  const { taskId } = req.params;
+  const { date } = req.query;
+
+  Exceptions.removeException(taskId, date, (err, result) => {
+    if (err) {
+      console.error('Remove exception error:', err);
+      return res.status(500).json({ message: 'Server error' });
+    }
+    res.status(200).json(result);
+  });
 };
