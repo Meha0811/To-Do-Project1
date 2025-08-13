@@ -1,7 +1,7 @@
 const TaskModel = require('../models/task.model');
 const ReminderModel = require('../models/reminder.model');
 const UserModel = require('../models/user.model');
-const sendReminderEmail = require('../services/emailReminder.service');
+//const sendReminderEmail = require('../services/emailReminder.service');
 const { decrypt } = require('../utils/encryption.utils');
 
 function subtractTime(date, minutes) {
