@@ -6,12 +6,12 @@ exports.createTaskValidator = [
   body('description').optional().isString(),
   body('category_id').optional().isInt(),
   body('priority').optional().isIn(['Low', 'Medium', 'High']),
-  body('due_date').optional().isISO8601().withMessage('Invalid date format'),
+  body('due_date').notEmpty().isISO8601().withMessage('Invalid date format'),
   body('is_completed').optional().isBoolean(),
   body('is_archived').optional().isBoolean(),
   body('is_starred').optional().isBoolean(),
   body('color_tag').optional().isString(),
-  body('repeat_pattern').optional().isIn(['None', 'Daily', 'Weekly', 'Monthly']),
+  body('repeat_pattern').optional().isIn(['none', 'daily', 'weekly', 'monthly']),
 ];
 
 exports.updateTaskValidator = [
