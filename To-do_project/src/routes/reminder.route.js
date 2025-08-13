@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const reminderController = require('../controllers/reminder.controller');
-const reminderValidator = require('../middleware/reminderValidator.middleware');
+const reminderValidator = require('../middleware/validators/reminderValidator.middleware');
 
 // Create reminder
 router.post('/', reminderValidator, reminderController.createReminder);
