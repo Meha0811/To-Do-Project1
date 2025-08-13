@@ -11,7 +11,8 @@ exports.createTaskValidator = [
   body('is_archived').optional().isBoolean(),
   body('is_starred').optional().isBoolean(),
   body('color_tag').optional().isString(),
-  body('repeat_pattern').optional().isIn(['none', 'daily', 'weekly', 'monthly']),
+  body('repeat_pattern').optional().isIn(['None', 'Daily', 'Weekly', 'Monthly']),
+  body('reminder_time').optional().isISO8601()
 ];
 
 exports.updateTaskValidator = [

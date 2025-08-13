@@ -1,51 +1,51 @@
-const db = require('../config/db');
+const db = require('../db/db-connection');
 
-const RecurringTaskExceptions = {};
+// Recurring Task operations
+const RecurringTask = {};
 
-RecurringTaskExceptions.addException = (data, callback) => {
-  const { recurring_task_id, exception_date, reason } = data;
-
-  const query = `
-    INSERT INTO recurring_task_exceptions (recurring_task_id, exception_date, reason)
+// Create a recurring task
+RecurringTask.createRecurringTask = async (data) => {
+  const { task_id, pattern, next_occurence } = data;
+  const sql = `
+    INSERT INTO recurring_task (task_id, pattern, next_occurence)
     VALUES (?, ?, ?)
   `;
-  db.query(query, [recurring_task_id, exception_date, reason], (err, result) => {
-    if (err) return callback(err);
-    callback(null, { message: 'Exception added', id: result.insertId });
-  });
+  const result = await db(sql, [task_id, pattern, next_occurence]);
+  return result;
 };
 
-RecurringTaskExceptions.getExceptionsByTask = (recurring_task_id, callback) => {
-  const query = `
-    SELECT * FROM recurring_task_exceptions
-    WHERE recurring_task_id = ?
+// Get recurring task by task_id
+RecurringTask.getRecurringTask = async (task_id) => {
+  const sql = `SELECT * FROM recurring_task WHERE task_id = ?`;
+  const result = await db(sql, [task_id]);
+  return result[0];
+};
+
+// Add exception date for recurring task
+RecurringTask.addException = async ({ recurring_id, exception_date, reason }) => {
+  const sql = `
+    INSERT INTO recurring_task_exceptions (recurring_id, exception_date, reason)
+    VALUES (?, ?, ?)
   `;
-  db.query(query, [recurring_task_id], (err, rows) => {
-    if (err) return callback(err);
-    callback(null, rows);
-  });
+  const result = await db(sql, [recurring_id, exception_date, reason]);
+  return result;
 };
 
-RecurringTaskExceptions.removeException = (recurring_task_id, exception_date, callback) => {
-  const query = `
+// Get exceptions for a recurring task
+RecurringTask.getExceptions = async (recurring_id) => {
+  const sql = `
+    SELECT * FROM recurring_task_exceptions WHERE recurring_id = ?
+  `;
+  return await db(sql, [recurring_id]);
+};
+
+// Remove exception
+RecurringTask.removeException = async (recurring_id, exception_date) => {
+  const sql = `
     DELETE FROM recurring_task_exceptions
-    WHERE recurring_task_id = ? AND exception_date = ?
+    WHERE recurring_id = ? AND exception_date = ?
   `;
-  db.query(query, [recurring_task_id, exception_date], (err, result) => {
-    if (err) return callback(err);
-    callback(null, { message: 'Exception removed', result });
-  });
+  return await db(sql, [recurring_id, exception_date]);
 };
 
-RecurringTaskExceptions.isDateExcluded = (recurring_task_id, date, callback) => {
-  const query = `
-    SELECT * FROM recurring_task_exceptions
-    WHERE recurring_task_id = ? AND exception_date = ?
-  `;
-  db.query(query, [recurring_task_id, date], (err, rows) => {
-    if (err) return callback(err);
-    callback(null, rows.length > 0);
-  });
-};
-
-module.exports = RecurringTaskExceptions;
+module.exports = RecurringTask;

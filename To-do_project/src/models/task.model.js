@@ -1,4 +1,6 @@
 const db = require('../db/db-connection');
+const Progress = require('./progress.model');
+const RecurringTask = require('./recurringtask.model');
 
 const TaskModel = {
   // Create task
@@ -15,11 +17,26 @@ const TaskModel = {
       task.category_id || null,
       task.priority || 'Low',
       task.due_date,
-      task.is_starred ? 1 : 0,
+      task.is_starred || false,
       task.color_tag || null,
       task.repeat_pattern || 'None'
     ];
-    return await db(sql, values);
+    const result = await db(sql, values);
+    const taskId = result.insertId;
+
+    // Initialize progress
+    await Progress.upsert({ task_id: taskId, is_recurring: false, status: 'Pending', notes: '' });
+
+    // Create recurring task if repeat_pattern is set
+    if (task.repeat_pattern && task.repeat_pattern !== 'None') {
+      await RecurringTask.createRecurring({
+        task_id: taskId,
+        pattern: task.repeat_pattern,
+        next_occurence: task.due_date
+      });
+    }
+
+    return result;
   },
 
   // Get task by ID
@@ -29,8 +46,8 @@ const TaskModel = {
     return result[0];
   },
 
-  // Get tasks for a user with filters
-  getTasksForUser: async (userId, filters = {}) => {
+  // Get tasks for a user with optional filters
+  getTasksForUser: async (userId, filters) => {
     let sql = 'SELECT * FROM task WHERE user_id = ?';
     const values = [userId];
 
@@ -38,38 +55,44 @@ const TaskModel = {
       sql += ' AND priority = ?';
       values.push(filters.priority);
     }
+
     if (filters.starred) {
       sql += ' AND is_starred = ?';
       values.push(filters.starred === 'true' ? 1 : 0);
     }
+
     if (filters.due_date) {
       sql += ' AND due_date = ?';
       values.push(filters.due_date);
     }
+
     if (filters.is_completed !== undefined) {
       sql += ' AND is_completed = ?';
       values.push(filters.is_completed === 'true' ? 1 : 0);
     }
+
     if (filters.category_id) {
       sql += ' AND category_id = ?';
       values.push(filters.category_id);
     }
+
     if (!filters.include_archived || filters.include_archived !== 'true') {
       sql += ' AND is_archived = 0';
     }
 
-    return await db(sql, values);
+    const tasks = await db(sql, values);
+    return tasks;
   },
 
   // Update task
   updateTask: async (id, data) => {
-    const fields = [];
-    const values = [];
+    let fields = [];
+    let values = [];
 
-    for (const [key, value] of Object.entries(data)) {
+    Object.entries(data).forEach(([key, value]) => {
       fields.push(`${key} = ?`);
       values.push(value);
-    }
+    });
 
     const sql = `UPDATE task SET ${fields.join(', ')}, updated_at = NOW() WHERE task_id = ?`;
     values.push(id);

@@ -1,14 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const exceptionController = require('../controllers/recurring_task_exceptions.controller');
+const recurringController = require('../controllers/recurringtask.controller');
+const awaitHandler = require('../middleware/awaitHandlerFactory.middleware');
+const validate = require('../middleware/validators/validate');
+const {
+  createRecurringTaskValidator,
+  addExceptionValidator,
+  removeExceptionValidator
+} = require('../middleware/validators/recurringTaskValidator.middleware');
 
-// Add an exception date to skip
-router.post('/', exceptionController.addException);
+// Recurring task
+router.post('/', createRecurringTaskValidator, validate, awaitHandler(recurringController.createRecurringTask));
+router.get('/:taskId', awaitHandler(recurringController.getRecurringTask));
 
-// Get all exceptions for a recurring task
-router.get('/:taskId', exceptionController.getExceptionsByTask);
-
-// Remove an exception date (pass ?date=YYYY-MM-DD)
-router.delete('/:taskId', exceptionController.removeException);
+// Exceptions
+router.post('/exception', addExceptionValidator, validate, awaitHandler(recurringController.addException));
+router.get('/exception/:taskId', awaitHandler(recurringController.getExceptions));
+router.delete('/exception/:taskId', removeExceptionValidator, validate, awaitHandler(recurringController.removeException));
 
 module.exports = router;

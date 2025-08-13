@@ -3,6 +3,8 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const HttpException = require("./utils/HttpException.utils");
 const errorMiddleware = require("./middleware/error.middleware");
+
+// Routers
 const userRouter = require("./routes/user.route");
 const taskRouter = require("./routes/task.route");
 const reminderRouter = require("./routes/reminder.route");
@@ -27,11 +29,11 @@ const port = Number(process.env.PORT || 3331);
 
 // Routes
 app.use("/api/v1/users", userRouter);
-app.use("/api/v1/tasks", taskRouter);
+app.use("/api/v1/tasks", taskRouter);            // Task routes now include validators
 app.use("/api/v1/reminders", reminderRouter);
 app.use("/api/v1/categories", categoryRouter);
-app.use("/api/v1/progress", progressRouter);
-app.use("/api/v1/recurring", recurringTaskRouter);
+app.use("/api/v1/progress", progressRouter);     // Progress routes use awaitHandler
+app.use("/api/v1/recurring", recurringTaskRouter); // Recurring routes use awaitHandler
 
 // 404 handler
 app.all("*", (req, res, next) => {
