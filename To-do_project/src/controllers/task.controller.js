@@ -1,15 +1,15 @@
 const TaskModel = require('../models/task.model');
 const ReminderModel = require('../models/reminder.model');
 const UserModel = require('../models/user.model');
-const { decrypt } = require('../utils/encryption.utils');
 const sendReminderEmail = require('../services/emailReminder.service');
+const { decrypt } = require('../utils/encryption.utils');
 
-// Helper to subtract minutes
+// Subtract minutes utility
 function subtractTime(date, minutes) {
   return new Date(date.getTime() - minutes * 60000);
 }
 
-// Create task
+// ✅ Create task with reminder
 exports.createTask = async (req, res, next) => {
   try {
     const task = req.body;
@@ -18,49 +18,79 @@ exports.createTask = async (req, res, next) => {
       return res.status(400).json({ message: 'user_id, title, and due_date are required' });
     }
 
+    // Create task
     const result = await TaskModel.createTask(task);
     const taskId = result.insertId;
 
-    // Get user email
+    // Get user email & decrypt
     const user = await UserModel.getUserById(task.user_id);
-    if (!user || !user.email) {
-      return res.status(404).json({ message: 'User email not found' });
-    }
-
+    if (!user?.email) return res.status(404).json({ message: 'User email not found' });
     const email = decrypt(user.email);
 
-    // Calculate reminder time
+    // Create reminder (default 60 min before)
     const dueDate = new Date(task.due_date);
     const reminderTime = task.reminder_time ? new Date(task.reminder_time) : subtractTime(dueDate, 60);
 
-    // Save reminder in DB
-    await ReminderModel.createReminder({
-      task_id: taskId,
-      reminder_time: reminderTime
-    });
+    await ReminderModel.createReminder({ task_id: taskId, reminder_time: reminderTime });
 
-    // **Remove setTimeout**; cron job will handle sending email
+    // Optional immediate scheduling
+    const now = new Date();
+    const timeDiff = reminderTime - now;
+    if (timeDiff > 0) {
+      setTimeout(() => {
+        sendReminderEmail(
+          email,
+          `Reminder: ${task.title}`,
+          `Hey ${user.name}, don't forget to complete your task: "${task.title}" by ${dueDate}`
+        );
+      }, timeDiff);
+    }
 
-    res.status(201).json({ message: 'Task created successfully', taskId });
-  } catch (error) {
-    next(error);
+    res.status(201).json({ message: 'Task created and reminder scheduled', taskId });
+  } catch (err) {
+    next(err);
   }
 };
 
-
-
-// Get task by ID
-exports.getTaskById = async (req, res, next) => {
+// ✅ Update task + update reminder if due_date changed
+exports.updateTask = async (req, res, next) => {
   try {
-    const task = await TaskModel.getTaskById(req.params.id);
+    const taskId = req.params.id;
+    const data = req.body;
+
+    const task = await TaskModel.getTaskById(taskId);
     if (!task) return res.status(404).json({ message: 'Task not found' });
-    res.json(task);
-  } catch (error) {
-    next(error);
+
+    await TaskModel.updateTask(taskId, data);
+
+    if (data.due_date || data.reminder_time) {
+      const reminderTime = data.reminder_time
+        ? new Date(data.reminder_time)
+        : subtractTime(new Date(data.due_date || task.due_date), 60);
+      await ReminderModel.updateReminderByTaskId(taskId, reminderTime);
+    }
+
+    res.json({ message: 'Task updated successfully' });
+  } catch (err) {
+    next(err);
   }
 };
 
-// Get all tasks
+// ✅ Archive task
+exports.archiveTask = async (req, res, next) => {
+  try {
+    const taskId = req.params.id;
+    const task = await TaskModel.getTaskById(taskId);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+
+    await TaskModel.archiveTask(taskId);
+    res.json({ message: 'Task archived successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ✅ Get all tasks
 exports.getAllTasks = async (req, res, next) => {
   try {
     const userId = req.query.userId;
@@ -77,57 +107,18 @@ exports.getAllTasks = async (req, res, next) => {
 
     const tasks = await TaskModel.getTasksForUser(userId, filters);
     res.json(tasks);
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
-// Update task
-exports.updateTask = async (req, res, next) => {
-  try {
-    const updatedData = req.body;
-    if (Object.keys(updatedData).length === 0) {
-      return res.status(400).json({ message: 'At least one field is required to update' });
-    }
-
-    await TaskModel.updateTask(req.params.id, updatedData);
-    res.json({ message: 'Task updated successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Delete task
-exports.deleteTask = async (req, res, next) => {
-  try {
-    await TaskModel.deleteTask(req.params.id);
-    res.json({ message: 'Task deleted successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Archive task
-exports.archiveTask = async (req, res, next) => {
-  try {
-    const taskId = req.params.id;
-    const task = await TaskModel.getTaskById(taskId);
-    if (!task) return res.status(404).json({ message: 'Task not found' });
-
-    await TaskModel.archiveTask(taskId);
-    res.json({ message: 'Task archived successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Get archived tasks
+// ✅ Get archived tasks
 exports.getArchivedTasks = async (req, res, next) => {
   try {
     const userId = req.params.userId;
     const tasks = await TaskModel.getArchivedTasks(userId);
     res.json(tasks);
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };

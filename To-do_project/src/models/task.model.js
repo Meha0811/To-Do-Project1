@@ -1,6 +1,7 @@
 const db = require('../db/db-connection');
 
 const TaskModel = {
+  // Create task
   createTask: async (task) => {
     const sql = `
       INSERT INTO task 
@@ -16,18 +17,20 @@ const TaskModel = {
       task.due_date,
       task.is_starred ? 1 : 0,
       task.color_tag || null,
-      task.repeat_pattern ? task.repeat_pattern.toLowerCase() : 'none'
+      task.repeat_pattern || 'None'
     ];
     return await db(sql, values);
   },
 
+  // Get task by ID
   getTaskById: async (id) => {
     const sql = 'SELECT * FROM task WHERE task_id = ?';
     const result = await db(sql, [id]);
     return result[0];
   },
 
-  getTasksForUser: async (userId, filters) => {
+  // Get tasks for a user with filters
+  getTasksForUser: async (userId, filters = {}) => {
     let sql = 'SELECT * FROM task WHERE user_id = ?';
     const values = [userId];
 
@@ -35,7 +38,7 @@ const TaskModel = {
       sql += ' AND priority = ?';
       values.push(filters.priority);
     }
-    if (filters.starred !== undefined) {
+    if (filters.starred) {
       sql += ' AND is_starred = ?';
       values.push(filters.starred === 'true' ? 1 : 0);
     }
@@ -58,6 +61,7 @@ const TaskModel = {
     return await db(sql, values);
   },
 
+  // Update task
   updateTask: async (id, data) => {
     const fields = [];
     const values = [];
@@ -67,25 +71,25 @@ const TaskModel = {
       values.push(value);
     }
 
-    if (fields.length === 0) {
-      throw new Error("No fields provided for update.");
-    }
-
     const sql = `UPDATE task SET ${fields.join(', ')}, updated_at = NOW() WHERE task_id = ?`;
     values.push(id);
+
     return await db(sql, values);
   },
 
+  // Delete task
   deleteTask: async (id) => {
     const sql = 'DELETE FROM task WHERE task_id = ?';
     return await db(sql, [id]);
   },
 
+  // Archive task
   archiveTask: async (id) => {
     const sql = 'UPDATE task SET is_archived = 1, updated_at = NOW() WHERE task_id = ?';
     return await db(sql, [id]);
   },
 
+  // Get archived tasks
   getArchivedTasks: async (userId) => {
     const sql = 'SELECT * FROM task WHERE user_id = ? AND is_archived = 1';
     return await db(sql, [userId]);
