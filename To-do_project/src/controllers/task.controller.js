@@ -2,6 +2,7 @@ const TaskModel = require('../models/task.model');
 const ReminderModel = require('../models/reminder.model');
 const UserModel = require('../models/user.model');
 const { decrypt } = require('../utils/encryption.utils');
+const sendReminderEmail = require('../services/emailReminder.service');
 
 // Helper to subtract minutes
 function subtractTime(date, minutes) {
@@ -25,22 +26,28 @@ exports.createTask = async (req, res, next) => {
     if (!user || !user.email) {
       return res.status(404).json({ message: 'User email not found' });
     }
+
     const email = decrypt(user.email);
 
-    // Reminder
+    // Calculate reminder time
     const dueDate = new Date(task.due_date);
     const reminderTime = task.reminder_time ? new Date(task.reminder_time) : subtractTime(dueDate, 60);
 
+    // Save reminder in DB
     await ReminderModel.createReminder({
       task_id: taskId,
       reminder_time: reminderTime
     });
 
-    res.status(201).json({ message: 'Task created', taskId });
+    // **Remove setTimeout**; cron job will handle sending email
+
+    res.status(201).json({ message: 'Task created successfully', taskId });
   } catch (error) {
     next(error);
   }
 };
+
+
 
 // Get task by ID
 exports.getTaskById = async (req, res, next) => {

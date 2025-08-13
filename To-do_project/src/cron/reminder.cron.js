@@ -1,41 +1,42 @@
 const cron = require('node-cron');
-const db = require('../db/db-connection');
-const sendEmail = require('../utils/email.utils');
+const db = require('../db/db-connection'); // Your existing db query function
+const sendReminderEmail = require('../services/emailReminder.service');
+const { decrypt } = require('../utils/encryption.utils');
+const UserModel = require('../models/user.model');
 
+// Run every 1 minute
 cron.schedule('* * * * *', async () => {
-  console.log('🔁 Checking reminders...');
-
   try {
     const now = new Date();
 
-    // Fetch unsent reminders whose time has passed
+    // Fetch reminders due now or in past (not sent)
     const sql = `
-      SELECT r.reminder_id, r.reminder_time, r.is_sent, 
-             t.title, u.email 
+      SELECT r.reminder_id, r.task_id, r.reminder_time, t.title, t.user_id, t.is_completed
       FROM reminder r
       JOIN task t ON r.task_id = t.task_id
-      JOIN user u ON t.user_id = u.user_id
-      WHERE r.is_sent = FALSE AND r.reminder_time <= ?
+      WHERE r.is_sent = 0 AND r.reminder_time <= ?
     `;
-
     const reminders = await db(sql, [now]);
 
     for (const reminder of reminders) {
-      const subject = `Reminder: ${reminder.title}`;
-      const body = `⏰ You have an upcoming task: "${reminder.title}"`;
+      // Get user email
+      const user = await UserModel.getUserById(reminder.user_id);
+      if (!user || !user.email) continue;
 
-      await sendEmail(reminder.email, subject, body);
+      const email = decrypt(user.email);
+
+      // Send email
+      await sendReminderEmail(
+        email,
+        `Reminder: ${reminder.title}`,
+        `Hey ${user.name}, don't forget to complete your task: "${reminder.title}"`
+      );
 
       // Mark reminder as sent
-      await db('UPDATE reminder SET is_sent = TRUE WHERE reminder_id = ?', [reminder.reminder_id]);
-      console.log(`📧 Email sent to ${reminder.email} for task "${reminder.title}"`);
+      const updateSql = `UPDATE reminder SET is_sent = 1 WHERE reminder_id = ?`;
+      await db(updateSql, [reminder.reminder_id]);
     }
-
-    if (reminders.length === 0) {
-      console.log('✅ No due reminders found at this time.');
-    }
-
   } catch (err) {
-    console.error('❌ Error while checking reminders:', err);
+    console.error('Error in reminder cron:', err.message);
   }
 });
