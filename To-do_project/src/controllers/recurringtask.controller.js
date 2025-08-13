@@ -1,5 +1,4 @@
 const RecurringTask = require('../models/recurringtask.model');
-const Progress = require('../models/progress.model');
 
 // Create recurring task
 exports.createRecurringTask = async (req, res, next) => {
