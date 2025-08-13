@@ -1,35 +1,38 @@
-const Progress = require('../models/progress.model');
+const ProgressModel = require('../models/progress.model');
 
-exports.createOrUpdateProgress = async (req, res) => {
+// ✅ Create or Update Progress
+exports.createOrUpdateProgress = async (req, res, next) => {
   try {
-    const result = await Progress.upsert(req.body);
+    const result = await ProgressModel.upsert(req.body);
     res.status(200).json(result);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', details: err.message });
   }
 };
 
-exports.getProgressByTask = async (req, res) => {
+// ✅ Get Progress By Task
+exports.getProgressByTask = async (req, res, next) => {
   try {
     const task_id = req.params.taskId;
     const date = req.query.date || null;
-    const result = await Progress.getByTask(task_id, date);
-    res.status(200).json(result);
+    const progress = await ProgressModel.getByTask(task_id, date);
+    res.status(200).json(progress);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', details: err.message });
   }
 };
 
-exports.resetProgress = async (req, res) => {
+// ✅ Reset Progress
+exports.resetProgress = async (req, res, next) => {
   try {
     const task_id = req.params.taskId;
     const date = req.query.date || null;
-    const result = await Progress.reset(task_id, date);
+    const result = await ProgressModel.reset(task_id, date);
     res.status(200).json({ message: 'Progress reset', result });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', details: err.message });
   }
 };
