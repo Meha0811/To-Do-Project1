@@ -27,7 +27,12 @@ const values = [
     const taskId = result.insertId;
 
     // Initialize progress
-    await Progress.upsert({ task_id: taskId, is_recurring: false, status: 'Pending', notes: '' });
+   await Progress.upsert({
+  task_id: taskId,
+  recurring_instance_date: null,
+  progress_percentage: 0
+});
+
 
     // Create recurring task if repeat_pattern is set
     if (task.repeat_pattern && task.repeat_pattern !== 'None') {
