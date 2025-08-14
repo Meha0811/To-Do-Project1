@@ -58,10 +58,11 @@ CREATE TABLE progress (
   progress_id INT AUTO_INCREMENT PRIMARY KEY,
   task_id INT NOT NULL,
   recurring_instance_date DATE DEFAULT NULL,
-  progress_percentage INT CHECK (progress_percentage >= 0 AND progress_percentage <= 100) DEFAULT 0,
+  progress_percentage INT DEFAULT 0,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (task_id) REFERENCES task(task_id) ON DELETE CASCADE
 );
+
 
 -- =========================
 -- 6. RECURRING TASK TABLE
