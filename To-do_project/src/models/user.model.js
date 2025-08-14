@@ -5,17 +5,16 @@ const { encrypt, decrypt } = require('../utils/encryption.utils');
 exports.createUser = async (user) => {
   const encryptedEmail = encrypt(user.email);
   const sql = `INSERT INTO user (name, email) VALUES (?, ?)`;
-  const result = await db(sql, [user.name, encryptedEmail]);
-  return result;
+  return await db(sql, [user.name, encryptedEmail]);
 };
 
 // Get all users (decrypt emails)
 exports.getAllUsers = async () => {
   const sql = `SELECT * FROM user`;
   const result = await db(sql);
-  return result.map(user => ({
-    ...user,
-    email: decrypt(user.email)
+  return result.map(u => ({
+    ...u,
+    email: decrypt(u.email)
   }));
 };
 
@@ -23,26 +22,22 @@ exports.getAllUsers = async () => {
 exports.getUserById = async (id) => {
   const sql = `SELECT * FROM user WHERE user_id = ?`;
   const result = await db(sql, [id]);
-
   if (result.length === 0) return null;
-
   return {
     ...result[0],
     email: decrypt(result[0].email)
   };
 };
 
-// Update a user (encrypt email before saving)
+// Update a user (encrypt email)
 exports.updateUser = async (id, user) => {
   const encryptedEmail = encrypt(user.email);
   const sql = `UPDATE user SET name = ?, email = ? WHERE user_id = ?`;
-  const result = await db(sql, [user.name, encryptedEmail, id]);
-  return result;
+  return await db(sql, [user.name, encryptedEmail, id]);
 };
 
 // Delete a user
 exports.deleteUser = async (id) => {
   const sql = `DELETE FROM user WHERE user_id = ?`;
-  const result = await db(sql, [id]);
-  return result;
+  return await db(sql, [id]);
 };

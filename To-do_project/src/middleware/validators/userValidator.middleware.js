@@ -2,29 +2,24 @@ const { body } = require('express-validator');
 
 exports.createUserValidator = [
   body('name')
-    .exists()
-    .withMessage('Name is required')
-    .isLength({ min: 3 })
-    .withMessage('Name must be at least 3 characters long'),
-
+    .trim()
+    .notEmpty().withMessage('Name is required')
+    .isLength({ min: 3, max: 100 }).withMessage('Name must be 3-100 characters long'),
   body('email')
-    .exists()
-    .withMessage('Email is required')
-    .isEmail()
-    .withMessage('Invalid email format'),
+    .trim()
+    .notEmpty().withMessage('Email is required')
+    .isEmail().withMessage('Invalid email format')
+    .normalizeEmail()
 ];
 
 exports.updateUserValidator = [
   body('name')
-    .exists()
-    .withMessage('Name is required')
-    .isLength({ min: 3 })
-    .withMessage('Name must be at least 3 characters long'),
-
+    .trim()
+    .notEmpty().withMessage('Name is required')
+    .isLength({ min: 3, max: 100 }).withMessage('Name must be 3-100 characters long'),
   body('email')
-    .exists()
-    .withMessage('Email is required')
-    .isEmail()
-    .withMessage('Invalid email format'),
+    .trim()
+    .notEmpty().withMessage('Email is required')
+    .isEmail().withMessage('Invalid email format')
+    .normalizeEmail()
 ];
-

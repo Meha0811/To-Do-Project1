@@ -1,55 +1,60 @@
-const db = require('../config/db');
+const db = require('../db/db-connection');
 
 const Progress = {};
 
-// ✅ Create or Update Progress
-Progress.upsert = (data, callback) => {
-  const {
-    task_id,
-    is_recurring,
-    recurring_instance_date,
-    status,
-    notes
-  } = data;
-
-  let selectQuery = `
+// Create or update progress for task or recurring instance
+Progress.upsert = async ({ task_id, recurring_instance_date, progress_percentage }) => {
+  const selectSql = `
     SELECT * FROM progress
-    WHERE task_id = ? AND is_recurring = ?
+    WHERE task_id = ? AND recurring_instance_date ${recurring_instance_date ? '= ?' : 'IS NULL'}
   `;
-  let values = [task_id, is_recurring];
+  const values = [task_id];
+  if (recurring_instance_date) values.push(recurring_instance_date);
 
-  if (is_recurring) {
-    selectQuery += ' AND recurring_instance_date = ?';
-    values.push(recurring_instance_date);
+  const rows = await db(selectSql, values);
+  if (rows.length > 0) {
+    const updateSql = `
+      UPDATE progress
+      SET progress_percentage = ?, updated_at = NOW()
+      WHERE task_id = ? AND recurring_instance_date ${recurring_instance_date ? '= ?' : 'IS NULL'}
+    `;
+    const updateValues = [progress_percentage, task_id];
+    if (recurring_instance_date) updateValues.push(recurring_instance_date);
+    await db(updateSql, updateValues);
+    return { message: 'Progress updated' };
+  } else {
+    const insertSql = `
+      INSERT INTO progress (task_id, recurring_instance_date, progress_percentage)
+      VALUES (?, ?, ?)
+    `;
+    await db(insertSql, [task_id, recurring_instance_date || null, progress_percentage]);
+    return { message: 'Progress created' };
   }
-
-  db.query(selectQuery, values, (err, rows) => {
-    if (err) return callback(err);
-
-    if (rows.length > 0) {
-      // Update existing progress
-      const updateQuery = `
-        UPDATE progress
-        SET status = ?, notes = ?, updated_at = NOW()
-        WHERE id = ?
-      `;
-      db.query(updateQuery, [status, notes, rows[0].id], (err, result) => {
-        if (err) return callback(err);
-        callback(null, { message: 'Progress updated', id: rows[0].id });
-      });
-    } else {
-      // Insert new progress
-      const insertQuery = `
-        INSERT INTO progress (task_id, is_recurring, recurring_instance_date, status, notes)
-        VALUES (?, ?, ?, ?, ?)
-      `;
-      db.query(insertQuery, [task_id, is_recurring, recurring_instance_date, status, notes], (err, result) => {
-        if (err) return callback(err);
-        callback(null, { message: 'Progress created', id: result.insertId });
-      });
-    }
-  });
 };
 
-// ✅ Get Progress By Task
-Progress.getByTask = (task_id, recurring_instance_date)
+// Get progress for task or recurring instance
+Progress.getByTask = async (task_id, recurring_instance_date) => {
+  const sql = `
+    SELECT * FROM progress
+    WHERE task_id = ? AND recurring_instance_date ${recurring_instance_date ? '= ?' : 'IS NULL'}
+  `;
+  const values = [task_id];
+  if (recurring_instance_date) values.push(recurring_instance_date);
+  const rows = await db(sql, values);
+  return rows;
+};
+
+// Reset progress
+Progress.reset = async (task_id, recurring_instance_date) => {
+  const sql = `
+    UPDATE progress
+    SET progress_percentage = 0, updated_at = NOW()
+    WHERE task_id = ? AND recurring_instance_date ${recurring_instance_date ? '= ?' : 'IS NULL'}
+  `;
+  const values = [task_id];
+  if (recurring_instance_date) values.push(recurring_instance_date);
+  const result = await db(sql, values);
+  return result;
+};
+
+module.exports = Progress;

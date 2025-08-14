@@ -1,19 +1,17 @@
-// routes/progress.routes.js
-
 const express = require('express');
 const router = express.Router();
 const progressController = require('../controllers/progress.controller');
+const awaitHandler = require('../middleware/awaitHandlerFactory.middleware');
+const validate = require('../middleware/validators/validate');
+const { createOrUpdateProgressValidator } = require('../middleware/validators/progressValidator.middleware');
 
-// Create progress
-router.post('/', progressController.createProgress);
+// Create or update progress
+router.post('/', createOrUpdateProgressValidator, validate, awaitHandler(progressController.createOrUpdateProgress));
 
 // Get progress by task ID
-router.get('/:taskId', progressController.getProgressByTask);
-
-// Update progress
-router.put('/:taskId', progressController.updateProgress);
+router.get('/:taskId', awaitHandler(progressController.getProgressByTask));
 
 // Reset progress
-router.put('/:taskId/reset', progressController.resetProgress);
+router.put('/:taskId/reset', awaitHandler(progressController.resetProgress));
 
 module.exports = router;

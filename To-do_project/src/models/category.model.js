@@ -24,6 +24,7 @@ const CategoryModel = {
     return await db(sql, [userId]);
   },
 
+
   // Update category
   updateCategory: async (id, data) => {
     const fields = [];

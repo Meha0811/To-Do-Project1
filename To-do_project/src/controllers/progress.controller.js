@@ -1,35 +1,33 @@
 const Progress = require('../models/progress.model');
 
-exports.createOrUpdateProgress = async (req, res) => {
+exports.createOrUpdateProgress = async (req, res, next) => {
   try {
-    const result = await Progress.upsert(req.body);
-    res.status(200).json(result);
+    const { task_id, recurring_instance_date, progress_percentage } = req.body;
+    const result = await Progress.upsert({ task_id, recurring_instance_date, progress_percentage });
+    res.json(result);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    next(err);
   }
 };
 
-exports.getProgressByTask = async (req, res) => {
+exports.getProgressByTask = async (req, res, next) => {
   try {
     const task_id = req.params.taskId;
-    const date = req.query.date || null;
-    const result = await Progress.getByTask(task_id, date);
-    res.status(200).json(result);
+    const recurring_instance_date = req.query.date || null;
+    const result = await Progress.getByTask(task_id, recurring_instance_date);
+    res.json(result);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    next(err);
   }
 };
 
-exports.resetProgress = async (req, res) => {
+exports.resetProgress = async (req, res, next) => {
   try {
     const task_id = req.params.taskId;
-    const date = req.query.date || null;
-    const result = await Progress.reset(task_id, date);
-    res.status(200).json({ message: 'Progress reset', result });
+    const recurring_instance_date = req.query.date || null;
+    const result = await Progress.reset(task_id, recurring_instance_date);
+    res.json({ message: 'Progress reset', result });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    next(err);
   }
 };

@@ -8,10 +8,19 @@ const {
   updateCategoryValidator,
 } = require('../middleware/validators/categoryValidator.middleware');
 
+// Create a category
 router.post('/', createCategoryValidator, validate, awaitHandler(categoryController.createCategory));
-router.get('/', awaitHandler(categoryController.getAllCategories)); // Uses query param: ?userId=1
+
+// Get all categories for a  user
+router.get('/user/:userId', awaitHandler(categoryController.getAllCategories));
+
+// Get category by ID
 router.get('/:id', awaitHandler(categoryController.getCategoryById));
+
+// Update category
 router.put('/:id', updateCategoryValidator, validate, awaitHandler(categoryController.updateCategory));
+
+// Delete category
 router.delete('/:id', awaitHandler(categoryController.deleteCategory));
 
 module.exports = router;
