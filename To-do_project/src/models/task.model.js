@@ -11,16 +11,17 @@ const TaskModel = {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
     const values = [
-      task.user_id,
-      task.title,
-      task.description || '',
-      task.category_id || null,
-      task.priority || 'Low',
-      task.due_date,
-      task.is_starred || false,
-      task.color_tag || null,
-      task.repeat_pattern || 'None'
-    ];
+  task.user_id ?? null,
+  task.title ?? null,
+  task.description ?? '',
+  task.category_id ?? null,
+  task.priority ?? 'Low',
+  task.due_date ?? null,
+  task.is_starred ?? false,
+  task.color_tag ?? null,
+  task.repeat_pattern ?? 'None'
+];
+
     const result = await db(sql, values);
     const taskId = result.insertId;
 
