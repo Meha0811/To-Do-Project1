@@ -1,7 +1,6 @@
 const TaskModel = require('../models/task.model');
 const ReminderModel = require('../models/reminder.model');
 const UserModel = require('../models/user.model');
-const { decrypt } = require('../utils/encryption.utils');
 const sendReminderEmail = require('../services/emailReminder.service');
 
 function subtractTime(date, minutes) {
@@ -27,12 +26,12 @@ exports.createTask = async (req, res, next) => {
     const result = await TaskModel.createTask(task);
     const taskId = result.insertId;
 
-    // Get user email & decrypt
+    // Get user email (plain text now)
     const user = await UserModel.getUserById(task.user_id);
     if (!user || !user.email) {
       return res.status(404).json({ message: 'User email not found' });
     }
-    const email = decrypt(user.email);
+    const email = user.email;
 
     // Create reminder (custom or default 60 min before)
     const reminderTime = task.reminder_time

@@ -5,7 +5,7 @@ const awaitHandler = require('../middleware/awaitHandlerFactory.middleware');
 const validate = require('../middleware/validators/validate');
 const { createTaskValidator, updateTaskValidator } = require('../middleware/validators/taskValidator.middleware');
 
-// ✅ Specific routes first
+// Specific routes first
 router.get('/user/:userId/archived', awaitHandler(taskController.getArchivedTasks));
 
 router.post('/', createTaskValidator, validate, awaitHandler(taskController.createTask));
