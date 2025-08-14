@@ -1,18 +1,21 @@
 const crypto = require('crypto');
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY; // 32 chars
-const IV = process.env.ENCRYPTION_IV; // 16 chars
+
+const algorithm = 'aes-256-cbc';
+const key = crypto.scryptSync('your-secret-key', 'salt', 32);
+const iv = Buffer.alloc(16, 0); // example static IV for testing
 
 function encrypt(text) {
-    let cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), Buffer.from(IV));
-    let encrypted = cipher.update(text);
-    encrypted = Buffer.concat([encrypted, cipher.final()]);
-    return encrypted.toString('hex');
+    const cipher = crypto.createCipheriv(algorithm, key, iv);
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return encrypted;
 }
 
-function decrypt(text) {
-    let encryptedText = Buffer.from(text, 'hex');
-    let decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), Buffer.from(IV));
-    let decrypted = decipher.update(encryptedText);
-    decrypted = Buffer.concat([decrypted, decipher.final()]);
-    return decrypted.toString();
+function decrypt(encryptedText) {
+    const decipher = crypto.createDecipheriv(algorithm, key, iv);
+    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
 }
+
+module.exports = { encrypt, decrypt };
