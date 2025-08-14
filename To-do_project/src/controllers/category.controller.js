@@ -33,7 +33,7 @@ exports.getCategoryById = async (req, res) => {
 // Get all categories for a user
 exports.getAllCategories = async (req, res) => {
   try {
-    const userId = req.query.userId;
+    const userId = req.params.userId; // use params, not query
     if (!userId) return res.status(400).json({ error: 'User ID is required' });
 
     const categories = await CategoryModel.getAllCategories(userId);
@@ -45,6 +45,7 @@ exports.getAllCategories = async (req, res) => {
     });
   }
 };
+
 
 // Update category
 exports.updateCategory = async (req, res) => {
