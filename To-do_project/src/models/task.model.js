@@ -2,6 +2,7 @@ const db = require('../db/db-connection');
 const Progress = require('./progress.model');
 const RecurringTask = require('./recurringtask.model');
 
+
 const TaskModel = {
   // Create task
   createTask: async (task) => {
@@ -13,13 +14,13 @@ const TaskModel = {
 
     const values = [
       task.user_id,
-      task.title,
-      task.description ?? '',
+      (task.title),                                   
+      task.description ? (task.description) : null,    
       task.category_id ?? null,
       task.priority ?? 'Low',
       task.due_date,
       task.is_starred ?? false,
-      task.color_tag ?? null,
+      task.color_tag ? (task.color_tag) : null,        
       task.repeat_pattern ?? 'None'
     ];
 
@@ -35,7 +36,7 @@ const TaskModel = {
 
     // Create recurring task if repeat_pattern is set
     if (task.repeat_pattern && task.repeat_pattern !== 'None') {
-      await RecurringTask.createRecurring({
+      await RecurringTask.createRecurringTask({   
         task_id: taskId,
         pattern: task.repeat_pattern,
         next_occurence: task.due_date
@@ -49,7 +50,15 @@ const TaskModel = {
   getTaskById: async (id) => {
     const sql = 'SELECT * FROM task WHERE task_id = ?';
     const result = await db(sql, [id]);
-    return result[0];
+    if (!result[0]) return null;
+
+    // ✅ Decrypt sensitive fields
+    const task = result[0];
+    task.title = decrypt(task.title);
+    if (task.description) task.description = decrypt(task.description);
+    if (task.color_tag) task.color_tag = decrypt(task.color_tag);
+
+    return task;
   },
 
   // Get tasks for a user with optional filters
@@ -87,7 +96,14 @@ const TaskModel = {
     }
 
     const tasks = await db(sql, values);
-    return tasks;
+
+    // ✅ Decrypt sensitive fields for each task
+    return tasks.map(task => {
+      task.title = decrypt(task.title);
+      if (task.description) task.description = decrypt(task.description);
+      if (task.color_tag) task.color_tag = decrypt(task.color_tag);
+      return task;
+    });
   },
 
   // Update task
@@ -96,8 +112,13 @@ const TaskModel = {
     let values = [];
 
     Object.entries(data).forEach(([key, value]) => {
-      fields.push(`${key} = ?`);
-      values.push(value);
+      if (['title', 'description', 'color_tag'].includes(key) && value) {
+        fields.push(`${key} = ?`);
+        values.push((value));  
+      } else {
+        fields.push(`${key} = ?`);
+        values.push(value);
+      }
     });
 
     const sql = `UPDATE task SET ${fields.join(', ')}, updated_at = NOW() WHERE task_id = ?`;
@@ -106,22 +127,30 @@ const TaskModel = {
     return await db(sql, values);
   },
 
-  // Delete task
+  // ✅ Delete task
   deleteTask: async (id) => {
     const sql = 'DELETE FROM task WHERE task_id = ?';
     return await db(sql, [id]);
   },
 
-  // Archive task
+  // ✅ Archive task
   archiveTask: async (id) => {
     const sql = 'UPDATE task SET is_archived = 1, updated_at = NOW() WHERE task_id = ?';
     return await db(sql, [id]);
   },
 
-  // Get archived tasks
+  // ✅ Get archived tasks for a user
   getArchivedTasks: async (userId) => {
     const sql = 'SELECT * FROM task WHERE user_id = ? AND is_archived = 1';
-    return await db(sql, [userId]);
+    const tasks = await db(sql, [userId]);
+
+    // Decrypt sensitive fields
+    return tasks.map(task => {
+      task.title = decrypt(task.title);
+      if (task.description) task.description = decrypt(task.description);
+      if (task.color_tag) task.color_tag = decrypt(task.color_tag);
+      return task;
+    });
   }
 };
 
