@@ -7,13 +7,15 @@ const { createTaskValidator, updateTaskValidator } = require('../middleware/vali
 
 // Specific routes first
 router.get('/user/:userId/archived', awaitHandler(taskController.getArchivedTasks));
+router.put('/:id/archive', awaitHandler(taskController.archiveTask));   // ✅ moved up
 
 router.post('/', createTaskValidator, validate, awaitHandler(taskController.createTask));
 router.get('/', awaitHandler(taskController.getAllTasks));
 router.get('/:id', awaitHandler(taskController.getTaskById));
 router.put('/:id', updateTaskValidator, validate, awaitHandler(taskController.updateTask));
 router.delete('/:id', awaitHandler(taskController.deleteTask));
-
-router.put('/:id/archive', awaitHandler(taskController.archiveTask));
+router.patch('/:id/is_completed', awaitHandler(taskController.markTaskCompleted));
+// Get all archived tasks
+router.get('/archived', awaitHandler(taskController.getArchivedTasks));
 
 module.exports = router;

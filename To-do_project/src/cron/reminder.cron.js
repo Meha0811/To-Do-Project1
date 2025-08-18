@@ -1,3 +1,4 @@
+// reminder.cron.js
 const cron = require('node-cron');
 const db = require('../db/db-connection');
 const sendReminderEmail = require('../services/emailReminder.service');
@@ -17,12 +18,40 @@ cron.schedule('* * * * *', async () => {
 
     for (const r of reminders) {
       const user = await UserModel.getUserById(r.user_id);
-      if (!user?.email) continue;
-      const email = decrypt(user.email);
+      if (!user) {
+        console.warn(`Skipping reminder_id ${r.reminder_id}: User not found`);
+        continue;
+      }
 
-      await sendReminderEmail(email, `Reminder: ${r.title}`, `Hey ${user.name}, don't forget your task: "${r.title}"`);
+      // Decrypt email if needed
+      let email;
+      try {
+        email = decrypt(user.email); // If email is encrypted
+      } catch (err) {
+        email = user.email; // fallback if not encrypted
+      }
 
-      await db('UPDATE reminder SET is_sent = 1 WHERE reminder_id = ?', [r.reminder_id]);
+      // Validate email
+      if (!email || !email.includes('@')) {
+        console.warn(`Skipping reminder_id ${r.reminder_id}: Invalid email "${email}"`);
+        continue;
+      }
+
+      console.log(`Sending reminder to: ${email} for task "${r.title}"`);
+
+      try {
+        await sendReminderEmail(
+          email,
+          `Reminder: ${r.title}`,
+          `Hey ${user.name}, don't forget your task: "${r.title}"`
+        );
+
+        // Mark reminder as sent
+        await db('UPDATE reminder SET is_sent = 1 WHERE reminder_id = ?', [r.reminder_id]);
+        console.log(`Reminder ${r.reminder_id} marked as sent`);
+      } catch (err) {
+        console.error(`Failed to send email for reminder_id ${r.reminder_id}:`, err.message);
+      }
     }
   } catch (err) {
     console.error('Reminder cron error:', err.message);

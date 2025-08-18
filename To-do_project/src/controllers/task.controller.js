@@ -7,7 +7,7 @@ function subtractTime(date, minutes) {
   return new Date(date.getTime() - minutes * 60000);
 }
 
-// ✅ Create a new task with progress & recurring integration
+// ✅ Create a new task with progress , reminder & recurring integration
 exports.createTask = async (req, res, next) => {
   try {
     const task = req.body;
@@ -58,13 +58,69 @@ exports.createTask = async (req, res, next) => {
     }
 
     res.status(201).json({
-      message: 'Task created with progress and recurring integration',
+      message: 'Task created with progress and recurring integration and reminder',
       taskId
     });
   } catch (error) {
     next(error);
   }
 };
+
+// ✅ Mark task completed/incomplete (auto archive/unarchive)
+exports.markTaskCompleted = async (req, res, next) => {
+  try {
+    const taskId = req.params.id;
+    const { completed } = req.body; // true or false
+
+    const result = await TaskModel.markTaskCompleted(taskId, completed);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    if (completed) {
+      res.status(200).json({ message: 'Task marked as completed and archived' });
+    } else {
+      res.status(200).json({ message: 'Task marked as incomplete and unarchived' });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+
+// ✅ Get all tasks (with optional filters)
+exports.getAllTasks = async (req, res, next) => {
+  try {
+    const userId = req.query.userId;
+
+    if (userId) {
+      // Filters only apply if userId is provided
+      const filters = {
+        priority: req.query.priority,
+        category_id: req.query.category_id,
+        is_completed: req.query.completed,
+        starred: req.query.starred,
+        due_date: req.query.due_date,
+        include_archived: req.query.include_archived
+      };
+
+      const tasks = await TaskModel.getTasksForUser(userId, filters);
+      return res.status(200).json(tasks);
+    } else {
+      // No userId → fetch all tasks (admin view maybe)
+      const tasks = await TaskModel.getAllTasks();
+      return res.status(200).json(tasks);
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 
 // ✅ Get single task
 exports.getTaskById = async (req, res, next) => {
@@ -82,19 +138,36 @@ exports.getTaskById = async (req, res, next) => {
   }
 };
 
-// ✅ Update task
+// ✅ Update task with reminder
 exports.updateTask = async (req, res, next) => {
   try {
     const taskId = req.params.id;
-
-    if (!Object.keys(req.body).length) {
-      return res.status(400).json({ message: 'No fields provided to update' });
-    }
+    if (!Object.keys(req.body).length) return res.status(400).json({ message: 'No fields to update' });
 
     await TaskModel.updateTask(taskId, req.body);
-    res.status(200).json({ message: 'Task updated successfully' });
-  } catch (error) {
-    next(error);
+
+    // Update reminder if due_date or custom reminder_time changed
+    const updatedTask = await TaskModel.getTaskById(taskId);
+    if (!updatedTask) return res.status(404).json({ message: 'Task not found' });
+
+    const reminderTime = req.body.reminder_time
+      ? new Date(req.body.reminder_time)
+      : req.body.due_date
+      ? subtractTime(new Date(req.body.due_date), 60)
+      : null;
+
+    if (reminderTime) {
+      const existingReminder = await ReminderModel.getReminderByTaskId(taskId);
+      if (existingReminder) {
+        await ReminderModel.updateReminderByTaskId(taskId, reminderTime);
+      } else {
+        await ReminderModel.createReminder({ task_id: taskId, reminder_time: reminderTime });
+      }
+    }
+
+    res.status(200).json({ message: 'Task updated successfully with reminder' });
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -102,6 +175,7 @@ exports.updateTask = async (req, res, next) => {
 exports.deleteTask = async (req, res, next) => {
   try {
     const taskId = req.params.id;
+    await ReminderModel.deleteReminderByTaskId(taskId);
     await TaskModel.deleteTask(taskId);
     res.status(200).json({ message: 'Task deleted successfully' });
   } catch (error) {
@@ -126,6 +200,8 @@ exports.archiveTask = async (req, res, next) => {
   }
 };
 
+
+
 // ✅ Get archived tasks
 exports.getArchivedTasks = async (req, res, next) => {
   try {
@@ -137,24 +213,3 @@ exports.getArchivedTasks = async (req, res, next) => {
   }
 };
 
-// ✅ Get all tasks with filters
-exports.getAllTasks = async (req, res, next) => {
-  try {
-    const userId = req.query.userId;
-    if (!userId) return res.status(400).json({ message: 'userId is required' });
-
-    const filters = {
-      priority: req.query.priority,
-      category_id: req.query.category_id,
-      is_completed: req.query.completed,
-      starred: req.query.starred,
-      due_date: req.query.due_date,
-      include_archived: req.query.include_archived
-    };
-
-    const tasks = await TaskModel.getTasksForUser(userId, filters);
-    res.status(200).json(tasks);
-  } catch (error) {
-    next(error);
-  }
-};

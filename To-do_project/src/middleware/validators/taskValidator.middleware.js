@@ -12,9 +12,10 @@ exports.createTaskValidator = [
   body('is_starred').optional().isBoolean(),
   body('color_tag').optional().isString(),
   body('repeat_pattern').optional().isIn(['None', 'Daily', 'Weekly', 'Monthly']),
-  body('reminder_time').optional().isISO8601()
+  body('reminder_time').optional().isISO8601().withMessage('Invalid reminder_time format'),
 ];
 
 exports.updateTaskValidator = [
   body().custom(body => Object.keys(body).length > 0).withMessage('At least one field is required to update'),
+  body('reminder_time').optional().isISO8601().withMessage('Invalid reminder_time format'),
 ];

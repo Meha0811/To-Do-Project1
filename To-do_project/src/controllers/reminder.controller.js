@@ -32,21 +32,23 @@ exports.getRemindersByTaskId = async (req, res, next) => {
   }
 };
 
-// Update reminder
+// Update reminder by task ID
 exports.updateReminder = async (req, res, next) => {
   try {
-    const { task_id, reminder_time } = req.body;
-    await ReminderModel.updateReminderByTaskId(task_id, reminder_time);
+    const taskId = req.params.taskId;
+    const { reminder_time } = req.body;
+    await ReminderModel.updateReminderByTaskId(taskId, reminder_time);
     res.json({ message: 'Reminder updated successfully' });
   } catch (err) {
     next(err);
   }
 };
 
-// Delete reminder
+// Delete reminder by task ID
 exports.deleteReminder = async (req, res, next) => {
   try {
-    await ReminderModel.deleteReminderByTaskId(req.params.taskId);
+    const taskId = req.params.taskId;
+    await ReminderModel.deleteReminderByTaskId(taskId);
     res.json({ message: 'Reminder deleted successfully' });
   } catch (err) {
     next(err);

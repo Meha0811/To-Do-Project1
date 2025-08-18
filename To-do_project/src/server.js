@@ -35,6 +35,8 @@ app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/progress", progressRouter);     // Progress routes use awaitHandler
 app.use("/api/v1/recurring", recurringTaskRouter); // Recurring routes use awaitHandler
 
+require('./cron/reminder.cron');
+
 // 404 handler
 app.all("*", (req, res, next) => {
   const err = new HttpException(404, "Endpoint Not Found");
